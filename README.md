@@ -1,1 +1,1 @@
-# Confirm Steam trade listings
+# Netology export events to Google Calendar

@@ -1,84 +1,109 @@
-// window.addEventListener('load', function () {
-//     setTimeout(addGcalButtons, 2000);
-// })
-// var imgURL = chrome.runtime.getURL("images/calendar.ico");
+
+// constants
+const CALENDAR_BASE_URL =
+      'https://calendar.google.com/calendar/u/0/r/eventedit?';
+
+const courseName = window.location.toString().match('^.+/program/(.*?)($|/.*)')[1];
+const DETAILS_BASE_URL =
+      'https://netology.ru/profile/program/' + courseName;
 
 
-// get the course name from the tab url, e.g. https://netology.ru/profile/program/inst-13/calendar => inst-13
+// main loop
+getAppointments().then(
+      (appointments) => {
+            appointments
+                  .filter(appointment => (
+                        ("starts_at" in appointment)
+                        || ('lesson_task' in appointment && appointment.lesson_task.deadline !== null)))
+                  .forEach(
+                        (appointment, index) => {
+                              // console.log(appointment);
+                              const parsedAppointment = parseAppointment(appointment);
+                              const calendarURL = getGoogleCalendarURL(parsedAppointment);
+                              // using set interval here is a bit dirty since we will constantly try to redraw
+                              // however, there seems to be no better way about this as the js could be reloaded when navigating around
+                              setInterval(addButton, 2000, parsedAppointment, calendarURL, index);
+                        },
+                  );
+      },
+);
 
-const appointments = getAppointments(); // will use the internal API to fetch data
+function addButton(parsedAppointment, calendarURL, index) {
+      // console.log(parsedAppointment);
 
-let base_url =
-    'https://calendar.google.com/calendar/u/0/r/eventedit?';
+      // console.log(calendarURL);
+      const element = Array.from(document.querySelectorAll('div'))
+            .find(el => el.textContent === parsedAppointment.title);
 
-function addGcalButtons() {
-    let events = findElements('.*event-module__root.*');
-    console.log(events);
-
-    events.forEach(
-        el => {
-            let button = document.createElement("input");
-
-            let text = el.innerText;
-            let start = text.slice(0, 5).replace(":", "");
-            let end = text.slice(6, 11).replace(":", "");
-            let title = text.slice(11);
-            let day = el.parentElement.parentElement.parentElement.firstChild.textContent;
-
-            console.log(start);
-            console.log(end);
-
-            console.log(day);
-
-            // button.setAttribute("class", "gcal_button");
-            // button.style.width = "100%";
-            button.style.position = "absolute";
-            button.style.top = "15px";
-            button.style.right = "15px";
-            button.style.zIndex = '10';
-            button.src = "http://www.gravatar.com/avatar/a4d1ef03af32c9db6ee014c3eb11bdf6?s=32&d=identicon&r=PG";
-            button.setAttribute("type", "image");
+      // check if appointment block was found and if there is not already a button
+      if (element !== undefined && !element.parentElement.parentElement.lastChild.classList.contains('gcal_button')) {
+            const button = document.createElement('input');
+            button.style.position = 'absolute';
+            button.style.top = '10px';
+            button.style.left = '0px';
+            button.style.width = '30px';
+            button.style.zIndex = '100';
+            button.setAttribute("class", "gcal_button");
+            button.src = 'https://www.gstatic.com/calendar/images/dynamiclogo/2x/cal_06_v2.png';
             button.addEventListener("click", function () {
-                window.open(
-                    base_url
-                    + "text=" + "af"
-                    + "&ctz=Europe/Moscow"
-                    + "&dates=202010" + day + "T" + start + "00"
-                    + "/202010" + day + "T" + end + "00"
-                );
-            }, false);
+                  window.open(calendarURL);
+            });
+            button.setAttribute('type', 'image');
 
-            el.appendChild(button);
-        }
-    );
-}
-function findElements(className) {   // https://stackoverflow.com/questions/3184093/getelementbyname-regex
-    var elArray = [];
-    var tmp = document.getElementsByTagName("*");
-
-    var regex = new RegExp("(^|\\s)" + className + "(\\s|$)");
-    for (var i = 0; i < tmp.length; i++) {
-
-        if (regex.test(tmp[i].className)) {
-            elArray.push(tmp[i]);
-        }
-    }
-
-    return elArray;
-
+            element.parentElement.parentElement.appendChild(button);
+      }
 }
 
 
-//&dates=20201019T080000/20201019T100000&ctz=America/Los_Angeles&details=Description+of+the+event&location=Location+of+the+event&pli=1&uid=1601935181addeventcom&sf=true&output=xml
 
+async function getAppointments() {
+      const response = await fetch('https://netology.ru/backend/api/user/programs/' + courseName + '/calendar');
+      const data = await response.json();
 
-function getAppointments() {
+      return data.lesson_items;
+}
+function parseAppointment(appointment) {
 
-    let courseName = window.location.toString().match('^.+\/(.+)\/calendar')[1];
-    let data = fetch('https://netology.ru/backend/api/user/programs/' + courseName + '/calendar').then(res =>
-        res.json()).then(d => {
-            console.log(d)
-        });
+      if (appointment.type === "webinar") {
+            return {
+                  title: appointment.title,
+                  start: parseDate(appointment.starts_at),
+                  end: parseDate(appointment.ends_at),
+                  details: getDetailsUrl(appointment.id, appointment.lesson_id)
+            };
+      }
+      // console.log('deadline', appointment);
+      return {
+            title: appointment.title,
+            start: parseDate(appointment.lesson_task.deadline),
+            end: parseDate(appointment.lesson_task.deadline),
+            details: getDetailsUrl(appointment.id, appointment.lesson_id)
+      };
+}
 
-    return data.lesson_items;
+function parseDate(dateString) {
+      try {
+            return dateString.replaceAll('-', '').replaceAll(':', '').slice(0, 15);
+      }
+      catch (error) {
+            console.log(error);
+      }
+      return "";
+}
+
+function getDetailsUrl(item_id, lesson_id) {
+      return DETAILS_BASE_URL + '/lessons/' + lesson_id + '/lesson_items/' + item_id
+}
+
+function getGoogleCalendarURL(parsed) {
+
+      // example event
+      // https://calendar.google.com/calendar/u/0/r/eventedit?text=Summary+of+the+event&dates=20201019T080000/20201019T100000&ctz=America/Los_Angeles&details=Description+of+the+event&location=Location+of+the+event
+
+      return CALENDAR_BASE_URL +
+            'text=' + parsed.title.replaceAll(' ', '+') +
+            '&ctz=UTC' +
+            '&dates=' + parsed.start +
+            '/' + parsed.end +
+            '&details=' + parsed.details;
 }

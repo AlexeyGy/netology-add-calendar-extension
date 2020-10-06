@@ -1,0 +1,23 @@
+{
+  "name": "netology-add-calendar-extension",
+  "version": "1.0.0",
+  "description": "",
+  "main": "contentScript.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexeyGy/netology-add-calendar-extension.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlexeyGy/netology-add-calendar-extension/issues"
+  },
+  "homepage": "https://github.com/AlexeyGy/netology-add-calendar-extension#readme",
+  "devDependencies": {
+    "eslint": "^7.10.0",
+    "eslint-config-google": "^0.14.0"
+  }
+}
