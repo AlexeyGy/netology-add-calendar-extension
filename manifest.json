@@ -1,0 +1,21 @@
+{
+  "name": "My extension",
+  "manifest_version": 2,
+  "version": "1.0",
+  "permissions": [
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://netology.ru/*/calendar"
+      ],
+      "css": [
+        "myStyles.css"
+      ],
+      "js": [
+        "contentScript.js"
+      ]
+    }
+  ]
+}
