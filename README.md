@@ -2,6 +2,12 @@
 
 build via `bash distribute.sh`
 
+## screenshots
+
+![changes](promo_images/screenshot1.png) 
+![changes](promo_images/screenshot2.png)
+
+
 ## depends on
 - imagemagick for icon generation `choco install `
 - zip on windows `choco install zip`
