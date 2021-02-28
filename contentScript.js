@@ -16,19 +16,19 @@ getAppointments().then(
                         ("starts_at" in appointment)
                         || ('lesson_task' in appointment && appointment.lesson_task.deadline !== null)))
                   .forEach(
-                        (appointment, index) => {
+                        (appointment) => {
                               // console.log(appointment);
                               const parsedAppointment = parseAppointment(appointment);
                               const calendarURL = getGoogleCalendarURL(parsedAppointment);
                               // using set interval here is a bit dirty since we will constantly try to redraw
                               // however, there seems to be no better way about this as the js could be reloaded when navigating around
-                              setInterval(addButton, 2000, parsedAppointment, calendarURL, index);
+                              setInterval(addButton, 2000, parsedAppointment, calendarURL);
                         },
                   );
       },
 );
 
-function addButton(parsedAppointment, calendarURL, index) {
+function addButton(parsedAppointment, calendarURL) {
       // console.log(parsedAppointment);
 
       // console.log(calendarURL);
@@ -36,24 +36,45 @@ function addButton(parsedAppointment, calendarURL, index) {
             .find(el => el.textContent === parsedAppointment.title);
 
       // check if appointment block was found and if there is not already a button
-      if (element !== undefined && !element.parentElement.parentElement.lastChild.classList.contains('gcal_button')) {
-            const button = document.createElement('input');
-            button.style.position = 'absolute';
-            button.style.top = '10px';
-            button.style.left = '0px';
-            button.style.width = '30px';
-            button.style.zIndex = '100';
-            button.setAttribute("class", "gcal_button");
-            button.src = 'https://www.gstatic.com/calendar/images/dynamiclogo/2x/cal_06_v2.png';
-            button.addEventListener("click", function () {
-                  window.open(calendarURL);
-            });
-            button.setAttribute('type', 'image');
-
-            element.parentElement.parentElement.appendChild(button);
+      if (element == undefined) {
+            return;
       }
+      const previousIcons = element.parentElement.parentElement.parentElement.children;
+      // check if already added
+      let input_count = 0;
+      for (i = 0; i < previousIcons.length; i++) {
+            // console.log(previousIcons[i]);
+            if (previousIcons[i].tagName !== "INPUT") {
+                  continue;
+            }
+            input_count++;
+            if (previousIcons[i].title == parsedAppointment.title) {
+                  return;
+            }
+      }
+      // console.log(input_count);
+      // we know that the button was not added before
+      element.parentElement.parentElement.parentElement.appendChild(
+            createButtonElement(parsedAppointment.title, calendarURL, input_count * 25)
+      );
 }
 
+function createButtonElement(title, calendarURL, offset) {
+      const button = document.createElement('input');
+      button.style.position = 'absolute';
+      button.style.top = '10px';
+      button.style.left = offset + 'px';
+      button.style.width = '30px';
+      button.style.zIndex = '100';
+      button.title = title;
+      button.setAttribute("class", "gcal_button");
+      button.src = 'https://www.gstatic.com/calendar/images/dynamiclogo/2x/cal_06_v2.png';
+      button.addEventListener("click", function () {
+            window.open(calendarURL);
+      });
+      button.setAttribute('type', 'image');
+      return button;
+}
 
 
 async function getAppointments() {
