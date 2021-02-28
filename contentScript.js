@@ -29,7 +29,10 @@ getAppointments().then(
 );
 
 function addButton(parsedAppointment, calendarURL) {
-      // console.log(parsedAppointment);
+      // only on calendar page
+      if (!window.location.toString().match('.*calendar.*')){
+            return;
+      }
 
       // console.log(calendarURL);
       const element = Array.from(document.querySelectorAll('div'))

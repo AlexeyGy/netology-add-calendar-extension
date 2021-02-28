@@ -1,7 +1,7 @@
 {
   "name": "Netology - Export to Google Calendar",
   "manifest_version": 2,
-  "version": "0.3",
+  "version": "1.0",
   "permissions": [],
   "content_scripts": [
     {
